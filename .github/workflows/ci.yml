@@ -1,0 +1,57 @@
+name: Build & run test
+on:
+  workflow_dispatch:
+  push:
+    branches: [ 'main' ]
+    paths:
+      - 'src/**'
+      - 'test/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '!**/README*.md'
+      - '!docs/**'
+  pull_request:
+    branches: [ 'main' ]
+    paths:
+      - 'src/**'
+      - 'test/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '!**/README*.md'
+      - '!docs/**'
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    # skip ci if PR has label 'skip-ci' or 'skip-actions'
+    if: |
+      !contains(github.event.pull_request.labels.*.name, 'skip-ci') &&
+      !contains(github.event.pull_request.labels.*.name, 'skip-actions')
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./
+    strategy:
+      matrix:
+        node-version: [20.16.0]
+    steps:
+      - name: Copy repository
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+          cache-dependency-path: ./pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm install
+      - name: Lint code
+        run: pnpm lint
+      - name: Build project
+        run: pnpm build
+      - name: Run UT tests
+        run: pnpm test
