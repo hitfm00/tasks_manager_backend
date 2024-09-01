@@ -16,23 +16,6 @@
   - [Commit conventions](conventions/commit-conventions.md)
   - [Linting & formatting](conventions/linting.md)
 
-## Features
-
-- [x] Database. Support [TypeORM](https://www.npmjs.com/package/typeorm)
-- [x] Seeding ([Typeorm Extension](https://www.npmjs.com/package/typeorm-extension)).
-- [x] Config Service ([@nestjs/config](https://www.npmjs.com/package/@nestjs/config)).
-- [x] Mailing ([@nestjs-modules/mailer](https://www.npmjs.com/package/@nestjs-modules/mailer) & [nodemailer](https://www.npmjs.com/package/nodemailer)).
-- [x] Sign in and sign up via email.
-- [ ] Social sign in (Apple, Facebook, Google, Twitter).
-- [ ] Admin and User roles.
-- [x] Pagination: Offset and Cursor (Clone from [typeorm-cursor-pagination](https://github.com/benjamin658/typeorm-cursor-pagination) and add more features).
-- [x] Internationalization/Translations (I18N) ([nestjs-i18n](https://www.npmjs.com/package/nestjs-i18n)).
-- [ ] File uploads. Support local and Amazon S3 drivers.
-- [x] Swagger.
-- [x] E2E and units tests.
-- [x] Docker.
-- [x] CI (Github Actions).
-
 ## References
 
 - [TypeScript](https://www.typescriptlang.org/)
