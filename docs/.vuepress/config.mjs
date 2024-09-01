@@ -10,7 +10,7 @@ export default defineUserConfig({
   lang: 'en-US',
   title: 'NestJS tasks-manager',
   description: 'NestJS tasks-manager',
-  base: 'https://github.com/hitfm00/tasks_manager_backend/',
+  base: '/tasks_manager_backend/',
   bundler: viteBundler(),
   markdown: {
     toc: {
