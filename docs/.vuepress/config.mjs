@@ -8,9 +8,9 @@ import { vi as viThemeConfig } from './config/theme/vi.config.mjs';
 
 export default defineUserConfig({
   lang: 'en-US',
-  title: 'NestJS boilerplate',
-  description: 'NestJS boilerplate with best practices',
-  base: '/nestjs-boilerplate/',
+  title: 'NestJS tasks-manager',
+  description: 'NestJS tasks-manager',
+  base: '/nestjs-tasks-manager/',
   bundler: viteBundler(),
   markdown: {
     toc: {
@@ -20,15 +20,15 @@ export default defineUserConfig({
   locales: {
     '/': {
       lang: 'en-US',
-      title: 'NestJS boilerplate 🎉',
+      title: 'NestJS Tasks Manager 🎉',
     },
     '/vi/': {
       lang: 'vi-VN',
-      title: 'NestJS boilerplate 🎉',
+      title: 'NestJS Tasks Manager 🎉',
     },
   },
   theme: defaultTheme({
-    repo: 'vndevteam/nestjs-boilerplate',
+    repo: 'hitfm00/tasks_manager_backend',
     docsBranch: 'main',
     docsDir: 'docs',
     locales: {
