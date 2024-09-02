@@ -4,11 +4,18 @@ import { SYSTEM_USER_ID } from '@/constants/app.constant';
 import { ErrorCode } from '@/constants/error-code.constant';
 import { MailService } from '@/mail/mail.service';
 import { verifyPassword } from '@/utils/password.util';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Cache } from 'cache-manager';
 import { plainToInstance } from 'class-transformer';
 import crypto from 'crypto';
 import ms from 'ms';
@@ -41,8 +48,8 @@ export class AuthService {
     private readonly mailService: MailService,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
-
   /**
    * Sign in user
    * @param dto LoginReqDto
@@ -111,8 +118,30 @@ export class AuthService {
     return { userId: savedUser.id, ...savedUser };
   }
 
-  async logout(sessionId: string): Promise<void> {
+  private calculateTokenTTL(token: string): number {
+    const payload = this.jwtService.decode(token) as any;
+    const expiration = payload.exp * 1000;
+    console.log(expiration, 111);
+    const ttl = Math.max(expiration - Date.now(), 0) / 1000; // TTL in seconds
+    return ttl;
+  }
+
+  async logout(sessionId: string, token: string): Promise<void> {
+    console.log(sessionId, 222);
+    if (!sessionId) {
+      throw new BadRequestException('Session ID is required');
+    }
+
     await SessionEntity.delete(sessionId);
+
+    const calculatedTTL = this.calculateTokenTTL(token);
+
+    // Blacklist the token
+    await this.cacheManager.set(
+      `blacklist:${token}`,
+      'blacklisted',
+      calculatedTTL,
+    );
   }
 
   async refreshToken(dto: RefreshReqDto): Promise<RefreshResDto> {
@@ -141,21 +170,39 @@ export class AuthService {
       hash: newHash,
     });
   }
+  async blacklistToken(token: string, ttl: number): Promise<void> {
+    await this.cacheManager.set(`blacklist:${token}`, 'blacklisted', ttl);
+  }
 
-  verifyAccessToken(token: string): JwtPayloadType {
+  private async isTokenBlacklisted(token: string): Promise<boolean> {
+    const blacklisted = await this.cacheManager.get(`blacklist:${token}`);
+    return !!blacklisted;
+  }
+
+  async verifyAccessToken(token: string): Promise<JwtPayloadType> {
     try {
       const payload = this.jwtService.verify(token, {
         secret: this.configService.getOrThrow('auth.secret', { infer: true }),
       });
 
+      // Check if token has expired
+      if (payload.exp && Date.now() >= payload.exp * 1000) {
+        console.error('Token has expired');
+        throw new UnauthorizedException({ error: 'Token has expired' });
+      }
+
+      // Check if token is blacklisted
+      const isBlacklisted = await this.isTokenBlacklisted(token);
+      if (isBlacklisted) {
+        console.error(`Token ${token} is blacklisted`);
+        throw new UnauthorizedException({ error: 'Token has been revoked' });
+      }
+
       return payload;
-    } catch {
+    } catch (error) {
+      console.error('Error verifying access token:', error);
       throw new UnauthorizedException();
     }
-
-    // For force logout feature
-    // Call in-memory DB to check if the session exists in the blacklist.
-    // If it exists, throw UnauthorizedException.
   }
 
   private verifyRefreshToken(token: string): JwtRefreshPayloadType {

@@ -1,6 +1,8 @@
 import { OffsetPaginatedDto } from '@/common/dto/offset-pagination/paginated.dto';
 import { Uuid } from '@/common/types/common.type';
+import { CurrentUser } from '@/decorators/current-user.decorator';
 import { ApiAuth } from '@/decorators/http.decorators';
+import { CacheInterceptor } from '@nestjs/cache-manager';
 import {
   Body,
   Controller,
@@ -11,6 +13,7 @@ import {
   Patch,
   Post,
   Query,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiParam, ApiTags } from '@nestjs/swagger';
 import { ListUserReqDto } from '../user/dto/list-user.req.dto';
@@ -20,6 +23,7 @@ import { UpdateTaskReqDto } from './dto/update-task.req.dto';
 import { TaskService } from './task.service';
 
 @ApiTags('tasks')
+@UseInterceptors(CacheInterceptor)
 @Controller({
   path: 'tasks',
   version: '1',
@@ -54,8 +58,11 @@ export class TaskController {
     type: TaskResDto,
     summary: 'Create task',
   })
-  async create(@Body() reqDto: CreateTaskReqDto) {
-    return this.taskService.create(reqDto);
+  async create(
+    @Body() reqDto: CreateTaskReqDto,
+    @CurrentUser('id') userId: Uuid,
+  ) {
+    return this.taskService.create(reqDto, userId);
   }
 
   @Patch(':id')
@@ -67,8 +74,9 @@ export class TaskController {
   async update(
     @Param('id', ParseUUIDPipe) id: Uuid,
     @Body() reqDto: UpdateTaskReqDto,
+    @CurrentUser('id') userId: Uuid,
   ) {
-    return this.taskService.update(id, reqDto);
+    return this.taskService.update(id, reqDto, userId);
   }
 
   @Delete(':id')
