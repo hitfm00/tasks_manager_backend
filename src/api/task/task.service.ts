@@ -36,14 +36,19 @@ export class TaskService {
     return task.toDto(TaskResDto);
   }
 
-  create(reqDto: CreateTaskReqDto) {
-    const task = TaskEntity.create(reqDto);
+  create(reqDto: CreateTaskReqDto, userId: Uuid) {
+    const task = TaskEntity.create({
+      ...reqDto,
+      createdBy: userId,
+      updatedBy: userId,
+    });
     return task.save();
   }
 
-  update(id: Uuid, reqDto: UpdateTaskReqDto) {
+  update(id: Uuid, reqDto: UpdateTaskReqDto, userId: Uuid) {
     assert(id, 'id is required');
-    const task = TaskEntity.update(id, reqDto);
+
+    const task = TaskEntity.update(id, { ...reqDto, updatedBy: userId });
     return task;
   }
 

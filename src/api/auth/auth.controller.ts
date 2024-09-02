@@ -1,6 +1,12 @@
 import { CurrentUser } from '@/decorators/current-user.decorator';
 import { ApiAuth, ApiPublic } from '@/decorators/http.decorators';
-import { Body, Controller, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginReqDto } from './dto/login.req.dto';
@@ -38,8 +44,18 @@ export class AuthController {
     errorResponses: [400, 401, 403, 500],
   })
   @Post('logout')
-  async logout(@CurrentUser('sessionId') sessionId: string): Promise<void> {
-    await this.authService.logout(sessionId);
+  async logout(
+    @CurrentUser() user: any,
+    @Req() request: Request,
+  ): Promise<void> {
+    const authHeader = request.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      throw new UnauthorizedException('Token is missing');
+    }
+
+    await this.authService.logout(user.sessionId, token);
   }
 
   @ApiPublic({

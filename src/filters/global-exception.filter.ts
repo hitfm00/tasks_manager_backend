@@ -12,6 +12,7 @@ import {
   HttpException,
   HttpStatus,
   Logger,
+  UnauthorizedException,
   UnprocessableEntityException,
   ValidationError,
 } from '@nestjs/common';
@@ -35,6 +36,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
+    console.log('CAUGHT EXCEPTION', exception);
     let error: ErrorDto;
 
     if (exception instanceof UnprocessableEntityException) {
@@ -47,6 +49,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       error = this.handleQueryFailedError(exception);
     } else if (exception instanceof EntityNotFoundError) {
       error = this.handleEntityNotFoundError(exception);
+    } else if (exception instanceof UnauthorizedException) {
+      error = this.handleUnauthorizedException(exception);
     } else {
       error = this.handleError(exception);
     }
@@ -238,5 +242,26 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     };
 
     return errors.flatMap((error) => extractErrors(error));
+  }
+
+  /**
+   * Handles UnauthorizedException
+   * @param exception UnauthorizedException
+   * @returns ErrorDto
+   */
+  private handleUnauthorizedException(
+    exception: UnauthorizedException,
+  ): ErrorDto {
+    const statusCode = exception.getStatus();
+    const errorRes = {
+      timestamp: new Date().toISOString(),
+      statusCode,
+      error: STATUS_CODES[statusCode],
+      message: exception.message,
+    };
+
+    this.logger.debug(exception);
+
+    return errorRes;
   }
 }

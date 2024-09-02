@@ -26,6 +26,9 @@ export class TaskEntity extends AbstractEntity {
   @Column()
   slug!: string;
 
+  @Column({ default: false })
+  completed!: boolean;
+
   @Column({ nullable: true })
   description?: string;
 
