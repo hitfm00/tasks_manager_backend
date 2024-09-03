@@ -16,8 +16,8 @@ import {
 } from '@nestjs/common';
 import { ApiParam, ApiTags } from '@nestjs/swagger';
 import { UpdateResult } from 'typeorm';
-import { ListTaskReqDto } from '../user/dto/list-user.req.dto';
 import { CreateTaskReqDto } from './dto/create-task.req.dto';
+import { ListTaskReqDto } from './dto/list-task.req.dto';
 import { TaskResDto } from './dto/task.res.dto';
 import { UpdateTaskReqDto } from './dto/update-task.req.dto';
 import { TaskEntity } from './entities/task.entity';
