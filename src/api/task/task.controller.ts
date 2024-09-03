@@ -2,8 +2,8 @@ import { OffsetPaginatedDto } from '@/common/dto/offset-pagination/paginated.dto
 import { Uuid } from '@/common/types/common.type';
 import { CurrentUser } from '@/decorators/current-user.decorator';
 import { ApiAuth } from '@/decorators/http.decorators';
-import { CacheInterceptor } from '@nestjs/cache-manager';
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -13,17 +13,17 @@ import {
   Patch,
   Post,
   Query,
-  UseInterceptors,
 } from '@nestjs/common';
 import { ApiParam, ApiTags } from '@nestjs/swagger';
-import { ListUserReqDto } from '../user/dto/list-user.req.dto';
+import { UpdateResult } from 'typeorm';
+import { ListTaskReqDto } from '../user/dto/list-user.req.dto';
 import { CreateTaskReqDto } from './dto/create-task.req.dto';
 import { TaskResDto } from './dto/task.res.dto';
 import { UpdateTaskReqDto } from './dto/update-task.req.dto';
+import { TaskEntity } from './entities/task.entity';
 import { TaskService } from './task.service';
 
 @ApiTags('tasks')
-@UseInterceptors(CacheInterceptor)
 @Controller({
   path: 'tasks',
   version: '1',
@@ -38,19 +38,32 @@ export class TaskController {
     isPaginated: true,
   })
   async findMany(
-    @Query() reqDto: ListUserReqDto,
+    @Query() reqDto: ListTaskReqDto,
   ): Promise<OffsetPaginatedDto<TaskResDto>> {
     return this.taskService.findMany(reqDto);
   }
 
-  @Get(':id')
+  @Patch(':id/toggle')
   @ApiAuth({
     type: TaskResDto,
-    summary: 'Get task by id',
+    summary: 'Toggle task status',
   })
   @ApiParam({ name: 'id', type: 'String' })
-  async findOne(@Param('id', ParseUUIDPipe) id: Uuid) {
-    return this.taskService.findOne(id);
+  async toggle(
+    @Param('id', ParseUUIDPipe) id: Uuid,
+    @CurrentUser() user: any,
+  ): Promise<UpdateResult> {
+    return this.taskService.toggle(id, user.id);
+  }
+
+  @Get(':idOrSlug')
+  @ApiAuth({
+    type: TaskResDto,
+    summary: 'Get task by id or slug',
+  })
+  @ApiParam({ name: 'idOrSlug', type: 'String' })
+  async findOne(@Param('idOrSlug') idOrSlug: string): Promise<TaskResDto> {
+    return this.taskService.findByIdOrSlug(idOrSlug);
   }
 
   @Post()
@@ -58,11 +71,16 @@ export class TaskController {
     type: TaskResDto,
     summary: 'Create task',
   })
-  async create(
-    @Body() reqDto: CreateTaskReqDto,
-    @CurrentUser('id') userId: Uuid,
-  ) {
-    return this.taskService.create(reqDto, userId);
+  async create(@Body() reqDto: CreateTaskReqDto, @CurrentUser() user: any) {
+    const existingTask = await TaskEntity.findOneBy({ slug: reqDto.slug });
+
+    if (existingTask) {
+      throw new BadRequestException(
+        'Slug already exists. Please choose a different slug.',
+      );
+    }
+
+    return this.taskService.create(reqDto, user.id);
   }
 
   @Patch(':id')
@@ -76,7 +94,7 @@ export class TaskController {
     @Body() reqDto: UpdateTaskReqDto,
     @CurrentUser('id') userId: Uuid,
   ) {
-    return this.taskService.update(id, reqDto, userId);
+    return await this.taskService.update(id, reqDto, userId);
   }
 
   @Delete(':id')

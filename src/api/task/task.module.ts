@@ -4,11 +4,7 @@ import { TaskController } from './task.controller';
 import { TaskService } from './task.service';
 
 @Module({
-  imports: [
-    CacheModule.register({
-      ttl: 5000,
-    }),
-  ],
+  imports: [CacheModule.register()],
   controllers: [TaskController],
   providers: [TaskService],
 })
