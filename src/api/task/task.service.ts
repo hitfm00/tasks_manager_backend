@@ -114,6 +114,7 @@ export class TaskService {
     await this.invalidateCacheForTasksList();
 
     return updateResult;
+
   }
 
   async delete(id: Uuid) {

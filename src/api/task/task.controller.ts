@@ -2,6 +2,7 @@ import { OffsetPaginatedDto } from '@/common/dto/offset-pagination/paginated.dto
 import { Uuid } from '@/common/types/common.type';
 import { CurrentUser } from '@/decorators/current-user.decorator';
 import { ApiAuth } from '@/decorators/http.decorators';
+import { CacheInterceptor } from '@nestjs/cache-manager';
 import {
   BadRequestException,
   Body,
@@ -13,6 +14,7 @@ import {
   Patch,
   Post,
   Query,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiParam, ApiTags } from '@nestjs/swagger';
 import { UpdateResult } from 'typeorm';
@@ -24,6 +26,7 @@ import { TaskEntity } from './entities/task.entity';
 import { TaskService } from './task.service';
 
 @ApiTags('tasks')
+@UseInterceptors(CacheInterceptor)
 @Controller({
   path: 'tasks',
   version: '1',
